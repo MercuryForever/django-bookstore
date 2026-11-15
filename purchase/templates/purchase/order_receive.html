@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}采购入库 - 连锁书店管理系统{% endblock %}
+{% block page_title %}采购入库{% endblock %}
+
+{% block content %}
+<form method="post">
+    {% csrf_token %}
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-box-seam"></i> 入库商品
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>商品名称</th>
+                                <th>条码</th>
+                                <th>采购数量</th>
+                                <th>已收货</th>
+                                <th>待收货</th>
+                                <th>本次入库</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in order.items.all %}
+                            <tr>
+                                <td>{{ item.product.name }}</td>
+                                <td>{{ item.product.barcode }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>{{ item.received_quantity }}</td>
+                                <td>{{ item.pending_quantity }}</td>
+                                <td style="width: 120px;">
+                                    {% if item.pending_quantity > 0 %}
+                                    <input type="number" name="quantity_{{ item.pk }}" 
+                                           class="form-control form-control-sm" 
+                                           min="0" max="{{ item.pending_quantity }}" 
+                                           value="{{ item.pending_quantity }}">
+                                    {% else %}
+                                    <span class="text-success">已完成</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-info-circle"></i> 入库信息
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">订单号</label>
+                        <input type="text" class="form-control" value="{{ order.order_no }}" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">供应商</label>
+                        <input type="text" class="form-control" value="{{ order.supplier.name }}" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">入库门店 <span class="text-danger">*</span></label>
+                        <select name="store" class="form-select" required>
+                            {% for store in stores %}
+                            <option value="{{ store.pk }}">{{ store.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">备注</label>
+                        <textarea name="remark" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg"></i> 确认入库
+                </button>
+                <a href="{% url 'purchase:order_detail' order.pk %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> 返回
+                </a>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}

@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+
+{% block title %}采购订单 - 连锁书店管理系统{% endblock %}
+{% block page_title %}采购订单{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-cart-plus"></i> 采购订单列表</span>
+        <a href="{% url 'purchase:order_create' %}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg"></i> 新建采购订单
+        </a>
+    </div>
+    <div class="card-body">
+        <!-- 筛选 -->
+        <form method="get" class="row g-3 mb-4">
+            <div class="col-md-2">
+                <select name="status" class="form-select">
+                    <option value="">全部状态</option>
+                    <option value="draft" {% if status == 'draft' %}selected{% endif %}>草稿</option>
+                    <option value="submitted" {% if status == 'submitted' %}selected{% endif %}>已提交</option>
+                    <option value="approved" {% if status == 'approved' %}selected{% endif %}>已审核</option>
+                    <option value="receiving" {% if status == 'receiving' %}selected{% endif %}>收货中</option>
+                    <option value="completed" {% if status == 'completed' %}selected{% endif %}>已完成</option>
+                    <option value="cancelled" {% if status == 'cancelled' %}selected{% endif %}>已取消</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="supplier" class="form-select">
+                    <option value="">全部供应商</option>
+                    {% for s in suppliers %}
+                    <option value="{{ s.pk }}" {% if supplier_id == s.pk|stringformat:"i" %}selected{% endif %}>{{ s.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="start_date" class="form-control" value="{{ start_date }}" placeholder="开始日期">
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="end_date" class="form-control" value="{{ end_date }}" placeholder="结束日期">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="bi bi-search"></i> 筛选
+                </button>
+            </div>
+        </form>
+        
+        <!-- 订单列表 -->
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>订单号</th>
+                    <th>供应商</th>
+                    <th>入库仓库</th>
+                    <th>总金额</th>
+                    <th>状态</th>
+                    <th>创建人</th>
+                    <th>创建时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td>
+                        <a href="{% url 'purchase:order_detail' order.pk %}">{{ order.order_no }}</a>
+                    </td>
+                    <td>{{ order.supplier.name }}</td>
+                    <td>{{ order.warehouse.name }}</td>
+                    <td>¥{{ order.total_amount|floatformat:2 }}</td>
+                    <td>
+                        {% if order.status == 'draft' %}
+                        <span class="badge bg-secondary">草稿</span>
+                        {% elif order.status == 'submitted' %}
+                        <span class="badge bg-info">已提交</span>
+                        {% elif order.status == 'approved' %}
+                        <span class="badge bg-primary">已审核</span>
+                        {% elif order.status == 'receiving' %}
+                        <span class="badge bg-warning">收货中</span>
+                        {% elif order.status == 'completed' %}
+                        <span class="badge bg-success">已完成</span>
+                        {% elif order.status == 'cancelled' %}
+                        <span class="badge bg-danger">已取消</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ order.created_by.first_name|default:order.created_by.username }}</td>
+                    <td>{{ order.created_at|date:"Y-m-d H:i" }}</td>
+                    <td>
+                        <a href="{% url 'purchase:order_detail' order.pk %}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        {% if order.status == 'draft' %}
+                        <a href="{% url 'purchase:order_edit' order.pk %}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-4">暂无采购订单</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <!-- 分页 -->
+        {% if orders.has_other_pages %}
+        <nav>
+            <ul class="pagination justify-content-center">
+                {% if orders.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ orders.previous_page_number }}&status={{ status }}&supplier={{ supplier_id }}">上一页</a>
+                </li>
+                {% endif %}
+                {% for num in orders.paginator.page_range %}
+                <li class="page-item {% if num == orders.number %}active{% endif %}">
+                    <a class="page-link" href="?page={{ num }}&status={{ status }}&supplier={{ supplier_id }}">{{ num }}</a>
+                </li>
+                {% endfor %}
+                {% if orders.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ orders.next_page_number }}&status={{ status }}&supplier={{ supplier_id }}">下一页</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

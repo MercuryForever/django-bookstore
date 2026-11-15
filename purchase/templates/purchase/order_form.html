@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - 连锁书店管理系统{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<form method="post" id="order-form">
+    {% csrf_token %}
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-cart"></i> 商品明细
+                </div>
+                <div class="card-body">
+                    {{ formset.management_form }}
+                    
+                    <table class="table" id="items-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40%;">商品</th>
+                                <th style="width: 15%;">数量</th>
+                                <th style="width: 20%;">单价</th>
+                                <th style="width: 20%;">小计</th>
+                                <th style="width: 5%;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item_form in formset %}
+                            <tr class="item-row">
+                                <td>
+                                    {{ item_form.id }}
+                                    {{ item_form.product }}
+                                </td>
+                                <td>{{ item_form.quantity }}</td>
+                                <td>{{ item_form.price }}</td>
+                                <td class="subtotal">¥0.00</td>
+                                <td>
+                                    {% if item_form.DELETE %}
+                                    {{ item_form.DELETE }}
+                                    {% endif %}
+                                    <button type="button" class="btn btn-sm btn-outline-danger remove-row">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" class="text-end"><strong>总计：</strong></td>
+                                <td colspan="2"><strong id="total-amount">¥0.00</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    
+                    <button type="button" class="btn btn-outline-primary" id="add-row">
+                        <i class="bi bi-plus-lg"></i> 添加商品
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-info-circle"></i> 订单信息
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">供应商 <span class="text-danger">*</span></label>
+                        {{ form.supplier }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">入库仓库 <span class="text-danger">*</span></label>
+                        {{ form.warehouse }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">预计到货日期</label>
+                        {{ form.expected_date }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">备注</label>
+                        {{ form.remark }}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg"></i> 保存
+                </button>
+                <a href="{% url 'purchase:order_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> 返回
+                </a>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tbody = document.querySelector('#items-table tbody');
+    const totalForms = document.querySelector('#id_items-TOTAL_FORMS');
+    
+    // 计算小计和总计
+    function calculateTotals() {
+        let total = 0;
+        document.querySelectorAll('.item-row').forEach(row => {
+            const quantity = parseFloat(row.querySelector('[name$="-quantity"]').value) || 0;
+            const price = parseFloat(row.querySelector('[name$="-price"]').value) || 0;
+            const subtotal = quantity * price;
+            row.querySelector('.subtotal').textContent = '¥' + subtotal.toFixed(2);
+            
+            // 检查是否被标记删除
+            const deleteCheckbox = row.querySelector('[name$="-DELETE"]');
+            if (!deleteCheckbox || !deleteCheckbox.checked) {
+                total += subtotal;
+            }
+        });
+        document.getElementById('total-amount').textContent = '¥' + total.toFixed(2);
+    }
+    
+    // 添加新行
+    document.getElementById('add-row').addEventListener('click', function() {
+        const formCount = parseInt(totalForms.value);
+        const newRow = tbody.querySelector('.item-row').cloneNode(true);
+        
+        // 更新表单索引
+        newRow.innerHTML = newRow.innerHTML.replace(/items-\d+-/g, `items-${formCount}-`);
+        
+        // 清空值
+        newRow.querySelectorAll('input, select').forEach(input => {
+            if (input.type !== 'hidden') {
+                input.value = '';
+            }
+        });
+        newRow.querySelector('.subtotal').textContent = '¥0.00';
+        
+        tbody.appendChild(newRow);
+        totalForms.value = formCount + 1;
+        
+        // 绑定事件
+        bindRowEvents(newRow);
+    });
+    
+    // 绑定行事件
+    function bindRowEvents(row) {
+        row.querySelector('.remove-row').addEventListener('click', function() {
+            const deleteCheckbox = row.querySelector('[name$="-DELETE"]');
+            if (deleteCheckbox) {
+                deleteCheckbox.checked = true;
+                row.style.display = 'none';
+            } else {
+                row.remove();
+                // 重新计算总数
+                totalForms.value = document.querySelectorAll('.item-row').length;
+            }
+            calculateTotals();
+        });
+        
+        row.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', calculateTotals);
+        });
+    }
+    
+    // 初始化绑定
+    document.querySelectorAll('.item-row').forEach(bindRowEvents);
+    
+    // 初始计算
+    calculateTotals();
+});
+</script>
+{% endblock %}
