@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}调拨单列表 - 连锁书店管理系统{% endblock %}
+{% block page_title %}调拨单列表{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-arrow-left-right"></i> 调拨单列表</span>
+        <a href="{% url 'inventory:transfer_create' %}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg"></i> 新建调拨单
+        </a>
+    </div>
+    <div class="card-body">
+        <!-- 筛选 -->
+        <form method="get" class="row g-3 mb-4">
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="">全部状态</option>
+                    <option value="pending" {% if status == 'pending' %}selected{% endif %}>待审核</option>
+                    <option value="approved" {% if status == 'approved' %}selected{% endif %}>已审核</option>
+                    <option value="completed" {% if status == 'completed' %}selected{% endif %}>已完成</option>
+                    <option value="cancelled" {% if status == 'cancelled' %}selected{% endif %}>已取消</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="bi bi-search"></i> 筛选
+                </button>
+            </div>
+        </form>
+        
+        <!-- 调拨单表格 -->
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>调拨单号</th>
+                    <th>调出门店</th>
+                    <th>调入门店</th>
+                    <th>商品数量</th>
+                    <th>状态</th>
+                    <th>创建人</th>
+                    <th>创建时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transfer in transfers %}
+                <tr>
+                    <td>{{ transfer.transfer_no }}</td>
+                    <td>{{ transfer.from_store.name }}</td>
+                    <td>{{ transfer.to_store.name }}</td>
+                    <td>{{ transfer.items.count }}</td>
+                    <td>
+                        <span class="badge 
+                            {% if transfer.status == 'pending' %}bg-warning
+                            {% elif transfer.status == 'approved' %}bg-info
+                            {% elif transfer.status == 'completed' %}bg-success
+                            {% elif transfer.status == 'cancelled' %}bg-danger
+                            {% endif %}">
+                            {{ transfer.get_status_display }}
+                        </span>
+                    </td>
+                    <td>{{ transfer.created_by.first_name|default:transfer.created_by.username }}</td>
+                    <td>{{ transfer.created_at|date:"Y-m-d H:i" }}</td>
+                    <td>
+                        <a href="{% url 'inventory:transfer_detail' transfer.pk %}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye"></i> 查看
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-4">暂无调拨单数据</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <!-- 分页 -->
+        {% if transfers.has_other_pages %}
+        <nav>
+            <ul class="pagination justify-content-center">
+                {% if transfers.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ transfers.previous_page_number }}&status={{ status }}">上一页</a>
+                </li>
+                {% endif %}
+                {% for num in transfers.paginator.page_range %}
+                {% if num == transfers.number or num == 1 or num == transfers.paginator.num_pages or num|add:"-2" <= transfers.number and num|add:"2" >= transfers.number %}
+                <li class="page-item {% if num == transfers.number %}active{% endif %}">
+                    <a class="page-link" href="?page={{ num }}&status={{ status }}">{{ num }}</a>
+                </li>
+                {% elif num == 2 or num == transfers.paginator.num_pages|add:"-1" %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+                {% endfor %}
+                {% if transfers.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ transfers.next_page_number }}&status={{ status }}">下一页</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

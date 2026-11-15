@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block title %}调拨单详情 - 连锁书店管理系统{% endblock %}
+{% block page_title %}调拨单详情{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-arrow-left-right"></i> 调拨商品</span>
+                <span class="badge 
+                    {% if transfer.status == 'pending' %}bg-warning
+                    {% elif transfer.status == 'approved' %}bg-info
+                    {% elif transfer.status == 'completed' %}bg-success
+                    {% elif transfer.status == 'cancelled' %}bg-danger
+                    {% endif %}">
+                    {{ transfer.get_status_display }}
+                </span>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>商品名称</th>
+                            <th>条码</th>
+                            <th>调拨数量</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in transfer.items.all %}
+                        <tr>
+                            <td>{{ item.product.name }}</td>
+                            <td>{{ item.product.barcode }}</td>
+                            <td>{{ item.quantity }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-info-circle"></i> 调拨信息
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless table-sm">
+                    <tr>
+                        <th>调拨单号：</th>
+                        <td>{{ transfer.transfer_no }}</td>
+                    </tr>
+                    <tr>
+                        <th>调出门店：</th>
+                        <td>{{ transfer.from_store.name }}</td>
+                    </tr>
+                    <tr>
+                        <th>调入门店：</th>
+                        <td>{{ transfer.to_store.name }}</td>
+                    </tr>
+                    <tr>
+                        <th>创建人：</th>
+                        <td>{{ transfer.created_by.first_name|default:transfer.created_by.username }}</td>
+                    </tr>
+                    <tr>
+                        <th>创建时间：</th>
+                        <td>{{ transfer.created_at|date:"Y-m-d H:i" }}</td>
+                    </tr>
+                    {% if transfer.approved_by %}
+                    <tr>
+                        <th>审核人：</th>
+                        <td>{{ transfer.approved_by.first_name|default:transfer.approved_by.username }}</td>
+                    </tr>
+                    <tr>
+                        <th>审核时间：</th>
+                        <td>{{ transfer.approved_at|date:"Y-m-d H:i" }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if transfer.completed_at %}
+                    <tr>
+                        <th>完成时间：</th>
+                        <td>{{ transfer.completed_at|date:"Y-m-d H:i" }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if transfer.remark %}
+                    <tr>
+                        <th>备注：</th>
+                        <td>{{ transfer.remark }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+        
+        <div class="d-grid gap-2">
+            {% if transfer.status == 'pending' %}
+            <a href="{% url 'inventory:transfer_approve' transfer.pk %}" class="btn btn-success">
+                <i class="bi bi-check-lg"></i> 审核通过
+            </a>
+            <a href="{% url 'inventory:transfer_cancel' transfer.pk %}" class="btn btn-outline-danger">
+                <i class="bi bi-x-lg"></i> 取消
+            </a>
+            {% endif %}
+            
+            {% if transfer.status == 'approved' %}
+            <a href="{% url 'inventory:transfer_execute' transfer.pk %}" class="btn btn-primary">
+                <i class="bi bi-play"></i> 执行调拨
+            </a>
+            <a href="{% url 'inventory:transfer_cancel' transfer.pk %}" class="btn btn-outline-danger">
+                <i class="bi bi-x-lg"></i> 取消
+            </a>
+            {% endif %}
+            
+            <a href="{% url 'inventory:transfer_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> 返回列表
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

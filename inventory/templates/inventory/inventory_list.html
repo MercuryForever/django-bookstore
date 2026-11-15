@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block title %}库存管理 - 连锁书店管理系统{% endblock %}
+{% block page_title %}库存管理{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-box-seam"></i> 库存列表</span>
+        <div>
+            <a href="{% url 'inventory:low_stock' %}" class="btn btn-warning btn-sm">
+                <i class="bi bi-exclamation-triangle"></i> 库存预警
+            </a>
+            <a href="{% url 'inventory:transfer_create' %}" class="btn btn-primary btn-sm">
+                <i class="bi bi-arrow-left-right"></i> 新建调拨
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <!-- 筛选 -->
+        <form method="get" class="row g-3 mb-4">
+            <div class="col-md-3">
+                <select name="store" class="form-select">
+                    <option value="">全部门店</option>
+                    {% for s in stores %}
+                    <option value="{{ s.pk }}" {% if store_id == s.pk|stringformat:"i" %}selected{% endif %}>{{ s.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="text" name="search" class="form-control" 
+                       placeholder="搜索商品名称或条码" value="{{ search }}">
+            </div>
+            <div class="col-md-2">
+                <div class="form-check mt-2">
+                    <input type="checkbox" name="low_stock" value="1" class="form-check-input"
+                           {% if low_stock %}checked{% endif %} id="low_stock">
+                    <label class="form-check-label" for="low_stock">仅显示预警</label>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="bi bi-search"></i> 筛选
+                </button>
+            </div>
+        </form>
+        
+        <!-- 库存表格 -->
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>门店</th>
+                    <th>商品名称</th>
+                    <th>条码</th>
+                    <th>分类</th>
+                    <th>库存数量</th>
+                    <th>安全库存</th>
+                    <th>状态</th>
+                    <th>更新时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for inv in inventories %}
+                <tr>
+                    <td>{{ inv.store.name }}</td>
+                    <td>{{ inv.product.name }}</td>
+                    <td>{{ inv.product.barcode }}</td>
+                    <td>{{ inv.product.category.name|default:"-" }}</td>
+                    <td>
+                        {% if inv.is_low_stock %}
+                        <span class="text-danger fw-bold">{{ inv.quantity }}</span>
+                        {% else %}
+                        {{ inv.quantity }}
+                        {% endif %}
+                    </td>
+                    <td>{{ inv.product.min_stock }}</td>
+                    <td>
+                        {% if inv.is_low_stock %}
+                        <span class="badge bg-danger">库存不足</span>
+                        {% elif inv.quantity == 0 %}
+                        <span class="badge bg-secondary">缺货</span>
+                        {% else %}
+                        <span class="badge bg-success">正常</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ inv.updated_at|date:"Y-m-d H:i" }}</td>
+                    <td>
+                        <a href="{% url 'inventory:detail' inv.pk %}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center text-muted py-4">暂无库存数据</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <!-- 分页 -->
+        {% if inventories.has_other_pages %}
+        <nav>
+            <ul class="pagination justify-content-center">
+                {% if inventories.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ inventories.previous_page_number }}&store={{ store_id }}&search={{ search }}&low_stock={{ low_stock }}">上一页</a>
+                </li>
+                {% endif %}
+                {% for num in inventories.paginator.page_range %}
+                {% if num == inventories.number or num == 1 or num == inventories.paginator.num_pages or num|add:"-2" <= inventories.number and num|add:"2" >= inventories.number %}
+                <li class="page-item {% if num == inventories.number %}active{% endif %}">
+                    <a class="page-link" href="?page={{ num }}&store={{ store_id }}&search={{ search }}&low_stock={{ low_stock }}">{{ num }}</a>
+                </li>
+                {% elif num == 2 or num == inventories.paginator.num_pages|add:"-1" %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+                {% endfor %}
+                {% if inventories.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ inventories.next_page_number }}&store={{ store_id }}&search={{ search }}&low_stock={{ low_stock }}">下一页</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

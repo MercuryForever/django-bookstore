@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - 连锁书店管理系统{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<form method="post" id="transfer-form">
+    {% csrf_token %}
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-box"></i> 调拨商品
+                </div>
+                <div class="card-body">
+                    <table class="table" id="items-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 50%;">商品</th>
+                                <th style="width: 20%;">当前库存</th>
+                                <th style="width: 20%;">调拨数量</th>
+                                <th style="width: 10%;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="item-row">
+                                <td>
+                                    <select name="product_id" class="form-select product-select">
+                                        <option value="">选择商品</option>
+                                        {% for p in products %}
+                                        <option value="{{ p.pk }}" data-price="{{ p.sale_price }}">
+                                            {{ p.name }} ({{ p.barcode }})
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td class="current-stock">-</td>
+                                <td>
+                                    <input type="number" name="quantity" class="form-control" min="1" value="1">
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-outline-danger remove-row">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <button type="button" class="btn btn-outline-primary" id="add-row">
+                        <i class="bi bi-plus-lg"></i> 添加商品
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-info-circle"></i> 调拨信息
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">调出门店 <span class="text-danger">*</span></label>
+                        <select name="from_store" class="form-select" id="from-store" required>
+                            <option value="">选择门店</option>
+                            {% for s in stores %}
+                            <option value="{{ s.pk }}">{{ s.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">调入门店 <span class="text-danger">*</span></label>
+                        <select name="to_store" class="form-select" required>
+                            <option value="">选择门店</option>
+                            {% for s in stores %}
+                            <option value="{{ s.pk }}">{{ s.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">备注</label>
+                        <textarea name="remark" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg"></i> 提交
+                </button>
+                <a href="{% url 'inventory:transfer_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> 返回
+                </a>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tbody = document.querySelector('#items-table tbody');
+    const fromStore = document.getElementById('from-store');
+    
+    // 添加新行
+    document.getElementById('add-row').addEventListener('click', function() {
+        const newRow = tbody.querySelector('.item-row').cloneNode(true);
+        newRow.querySelectorAll('input, select').forEach(input => {
+            input.value = '';
+        });
+        newRow.querySelector('.current-stock').textContent = '-';
+        tbody.appendChild(newRow);
+        bindRowEvents(newRow);
+    });
+    
+    // 绑定行事件
+    function bindRowEvents(row) {
+        // 删除行
+        row.querySelector('.remove-row').addEventListener('click', function() {
+            if (tbody.querySelectorAll('.item-row').length > 1) {
+                row.remove();
+            }
+        });
+        
+        // 商品选择变化时更新库存
+        row.querySelector('.product-select').addEventListener('change', function() {
+            updateStock(row);
+        });
+    }
+    
+    // 更新库存显示
+    function updateStock(row) {
+        const productId = row.querySelector('.product-select').value;
+        const storeId = fromStore.value;
+        const stockCell = row.querySelector('.current-stock');
+        
+        if (productId && storeId) {
+            fetch(`/inventory/api/stock/${storeId}/${productId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    stockCell.textContent = data.stock;
+                    row.querySelector('input[name="quantity"]').max = data.stock;
+                });
+        } else {
+            stockCell.textContent = '-';
+        }
+    }
+    
+    // 门店变化时更新所有商品库存
+    fromStore.addEventListener('change', function() {
+        document.querySelectorAll('.item-row').forEach(updateStock);
+    });
+    
+    // 初始化绑定
+    document.querySelectorAll('.item-row').forEach(bindRowEvents);
+});
+</script>
+{% endblock %}

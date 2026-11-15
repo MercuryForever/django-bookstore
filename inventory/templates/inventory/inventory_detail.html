@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block title %}库存详情 - 连锁书店管理系统{% endblock %}
+{% block page_title %}库存详情{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="bi bi-box-seam"></i> 库存详情
+        </h5>
+        <a href="{% url 'inventory:list' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> 返回列表
+        </a>
+    </div>
+    <div class="card-body">
+        <!-- 基本信息 -->
+        <div class="row g-4 mb-5">
+            <!-- 门店 -->
+            <div class="col-md-3">
+                <div class="border p-3 rounded bg-light">
+                    <div class="text-muted small mb-1">门店</div>
+                    <div class="fw-bold">{{ inventory.store.name }}</div>
+                </div>
+            </div>
+            <!-- 商品名称 -->
+            <div class="col-md-3">
+                <div class="border p-3 rounded bg-light">
+                    <div class="text-muted small mb-1">商品名称</div>
+                    <div class="fw-bold">{{ inventory.product.name }}</div>
+                </div>
+            </div>
+            <!-- 商品条码 -->
+            <div class="col-md-3">
+                <div class="border p-3 rounded bg-light">
+                    <div class="text-muted small mb-1">商品条码</div>
+                    <div class="fw-bold">{{ inventory.product.barcode }}</div>
+                </div>
+            </div>
+            <!-- 商品分类 -->
+            <div class="col-md-3">
+                <div class="border p-3 rounded bg-light">
+                    <div class="text-muted small mb-1">商品分类</div>
+                    <div class="fw-bold">{{ inventory.product.category.name|default:"-" }}</div>
+                </div>
+            </div>
+            <!-- 当前库存 -->
+            <div class="col-md-3">
+                <div class="border p-3 rounded bg-light">
+                    <div class="text-muted small mb-1">当前库存</div>
+                    <div class="fw-bold fs-5 {% if inventory.is_low_stock %}text-danger{% else %}text-success{% endif %}">
+                        {{ inventory.quantity }}
+                    </div>
+                </div>
+            </div>
+            <!-- 安全库存 -->
+            <div class="col-md-3">
+                <div class="border p-3 rounded bg-light">
+                    <div class="text-muted small mb-1">安全库存</div>
+                    <div class="fw-bold">{{ inventory.product.min_stock }}</div>
+                </div>
+            </div>
+            <!-- 库存状态 -->
+            <div class="col-md-3">
+                <div class="border p-3 rounded bg-light">
+                    <div class="text-muted small mb-1">库存状态</div>
+                    <div class="fw-bold">
+                        {% if inventory.is_low_stock %}
+                        <span class="badge bg-danger">库存不足</span>
+                        {% elif inventory.quantity == 0 %}
+                        <span class="badge bg-secondary">缺货</span>
+                        {% else %}
+                        <span class="badge bg-success">正常</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <!-- 更新时间 -->
+            <div class="col-md-3">
+                <div class="border p-3 rounded bg-light">
+                    <div class="text-muted small mb-1">更新时间</div>
+                    <div class="fw-bold">{{ inventory.updated_at|date:"Y-m-d H:i:s" }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 库存变动记录 -->
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-clock-history"></i> 库存变动记录
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>变动类型</th>
+                                <th>变动数量</th>
+                                <th>变动前</th>
+                                <th>变动后</th>
+                                <th>关联单号</th>
+                                <th>操作人</th>
+                                <th>备注</th>
+                                <th>变动时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for movement in movements %}
+                            <tr>
+                                <td>
+                                    {% if movement.movement_type == 'purchase_in' %}
+                            <span class="badge bg-success">采购入库</span>
+                            {% elif movement.movement_type == 'sale_out' %}
+                            <span class="badge bg-danger">销售出库</span>
+                            {% elif movement.movement_type == 'transfer_in' %}
+                            <span class="badge bg-primary">调拨入库</span>
+                            {% elif movement.movement_type == 'transfer_out' %}
+                            <span class="badge bg-info">调拨出库</span>
+                            {% elif movement.movement_type == 'adjust' %}
+                            <span class="badge bg-warning">库存调整</span>
+                            {% elif movement.movement_type == 'return_in' %}
+                            <span class="badge bg-success">退货入库</span>
+                            {% else %}
+                            <span class="badge bg-secondary">其他</span>
+                            {% endif %}
+                                </td>
+                                <td>
+                                    <span {% if movement.quantity > 0 %}class="text-success"{% else %}class="text-danger"{% endif %}>
+                                        {% if movement.quantity > 0 %}+{% endif %}{{ movement.quantity }}
+                                    </span>
+                                </td>
+                                <td>{{ movement.before_quantity }}</td>
+                                <td>{{ movement.after_quantity }}</td>
+                                <td>{{ movement.reference_no|default:"-" }}</td>
+                                <td>{{ movement.operator.first_name|default:movement.operator.username }}</td>
+                                <td>{{ movement.remark|default:"-" }}</td>
+                                <td>{{ movement.created_at|date:"Y-m-d H:i:s" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-4">暂无库存变动记录</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
