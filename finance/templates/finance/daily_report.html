@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}日报表 - 连锁书店管理系统{% endblock %}
+{% block page_title %}日报表{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-calendar-day"></i> 日销售报表</span>
+        <div>
+            <a href="{% url 'finance:export_daily_report' %}?date={{ report_date|date:'Y-m-d' }}" 
+               class="btn btn-success btn-sm">
+                <i class="bi bi-download"></i> 导出Excel
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <!-- 日期选择 -->
+        <form method="get" class="row g-3 mb-4">
+            <div class="col-md-3">
+                <input type="date" name="date" class="form-control" value="{{ report_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary">查询</button>
+            </div>
+        </form>
+        
+        <!-- 报表数据 -->
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>门店</th>
+                    <th class="text-end">订单数</th>
+                    <th class="text-end">销售额</th>
+                    <th class="text-end">优惠金额</th>
+                    <th class="text-end">利润</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stat in store_stats %}
+                <tr>
+                    <td>{{ stat.store__name }}</td>
+                    <td class="text-end">{{ stat.sales_count }}</td>
+                    <td class="text-end">¥{{ stat.sales_amount|floatformat:2 }}</td>
+                    <td class="text-end">¥{{ stat.discount_amount|floatformat:2|default:"0.00" }}</td>
+                    <td class="text-end">¥{{ stat.profit|floatformat:2 }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center text-muted">当日无销售数据</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot class="table-light fw-bold">
+                <tr>
+                    <td>合计</td>
+                    <td class="text-end">{{ total.sales_count|default:0 }}</td>
+                    <td class="text-end">¥{{ total.sales_amount|floatformat:2|default:"0.00" }}</td>
+                    <td class="text-end">¥{{ total.discount_amount|floatformat:2|default:"0.00" }}</td>
+                    <td class="text-end">¥{{ total_profit|floatformat:2 }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+{% endblock %}
