@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block title %}销售记录 - 连锁书店管理系统{% endblock %}
+{% block page_title %}销售记录{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-receipt"></i> 销售记录</span>
+        <a href="{% url 'sales:export_sales' %}?start_date={{ start_date }}&end_date={{ end_date }}" 
+           class="btn btn-outline-success btn-sm">
+            <i class="bi bi-download"></i> 导出CSV
+        </a>
+    </div>
+    <div class="card-body">
+        <!-- 筛选 -->
+        <form method="get" class="row g-3 mb-4">
+            <div class="col-md-2">
+                <select name="store" class="form-select">
+                    <option value="">全部门店</option>
+                    {% for s in stores %}
+                    <option value="{{ s.pk }}" {% if store_id == s.pk|stringformat:"i" %}selected{% endif %}>{{ s.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="end_date" class="form-control" value="{{ end_date }}">
+            </div>
+            <div class="col-md-2">
+                <input type="text" name="member" class="form-control" placeholder="会员姓名/手机" value="{{ member_search }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="bi bi-search"></i> 筛选
+                </button>
+            </div>
+        </form>
+        
+        <!-- 销售记录表格 -->
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>订单号</th>
+                    <th>门店</th>
+                    <th>会员</th>
+                    <th>商品总额</th>
+                    <th>优惠</th>
+                    <th>实付</th>
+                    <th>支付方式</th>
+                    <th>时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sale in sales %}
+                <tr>
+                    <td>{{ sale.order_no }}</td>
+                    <td>{{ sale.store.name }}</td>
+                    <td>{{ sale.member.name|default:"-" }}</td>
+                    <td>¥{{ sale.total_amount|floatformat:2 }}</td>
+                    <td>
+                        {% if sale.discount_amount > 0 %}
+                        <span class="text-success">-¥{{ sale.discount_amount|floatformat:2 }}</span>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td class="fw-bold">¥{{ sale.final_amount|floatformat:2 }}</td>
+                    <td>{{ sale.get_payment_method_display }}</td>
+                    <td>{{ sale.created_at|date:"m-d H:i" }}</td>
+                    <td>
+                        <a href="{% url 'sales:sale_detail' sale.pk %}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center text-muted py-4">暂无销售记录</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <!-- 分页 -->
+        {% if sales.has_other_pages %}
+        <nav>
+            <ul class="pagination justify-content-center">
+                {% if sales.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ sales.previous_page_number }}&store={{ store_id }}&start_date={{ start_date }}&end_date={{ end_date }}">上一页</a>
+                </li>
+                {% endif %}
+                {% for num in sales.paginator.page_range %}
+                {% if num == sales.number or num == 1 or num == sales.paginator.num_pages or num|add:"-2" <= sales.number and num|add:"2" >= sales.number %}
+                <li class="page-item {% if num == sales.number %}active{% endif %}">
+                    <a class="page-link" href="?page={{ num }}&store={{ store_id }}&start_date={{ start_date }}&end_date={{ end_date }}">{{ num }}</a>
+                </li>
+                {% elif num == 2 or num == sales.paginator.num_pages|add:"-1" %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+                {% endfor %}
+                {% if sales.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ sales.next_page_number }}&store={{ store_id }}&start_date={{ start_date }}&end_date={{ end_date }}">下一页</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

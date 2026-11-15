@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - 连锁书店管理系统{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-person"></i> {{ title }}
+    </div>
+    <div class="card-body">
+        <form method="post" class="needs-validation" novalidate>
+            {% csrf_token %}
+            
+            <div class="row g-4">
+                <!-- 姓名 -->
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="id_name" class="form-label">姓名 <span class="text-danger">*</span></label>
+                        {{ form.name }}
+                        <div class="invalid-feedback">
+                            {{ form.name.errors|first }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 手机号 -->
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="id_phone" class="form-label">手机号 <span class="text-danger">*</span></label>
+                        {{ form.phone }}
+                        <div class="invalid-feedback">
+                            {{ form.phone.errors|first }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 性别 -->
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">性别</label>
+                        <div class="d-flex gap-4 pt-2">
+                            {% for radio in form.gender %}
+                            <div class="form-check">
+                                {{ radio.tag }}
+                                <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                    {{ radio.choice_label }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="invalid-feedback">
+                            {{ form.gender.errors|first }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 生日 -->
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="id_birth_date" class="form-label">生日</label>
+                        {{ form.birth_date }}
+                        <div class="invalid-feedback">
+                            {{ form.birth_date.errors|first }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 地址 -->
+                <div class="col-md-8">
+                    <div class="form-group">
+                        <label for="id_address" class="form-label">地址</label>
+                        {{ form.address }}
+                        <div class="invalid-feedback">
+                            {{ form.address.errors|first }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 邮箱 -->
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="id_email" class="form-label">邮箱</label>
+                        {{ form.email }}
+                        <div class="invalid-feedback">
+                            {{ form.email.errors|first }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 会员状态 -->
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="id_is_active" class="form-label">会员状态</label>
+                        <div class="form-check form-switch pt-2">
+                            {{ form.is_active }}
+                            <label class="form-check-label" for="id_is_active">
+                                {% if form.is_active.value %}正常{% else %}禁用{% endif %}
+                            </label>
+                        </div>
+                        <div class="invalid-feedback">
+                            {{ form.is_active.errors|first }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-5">
+                <div class="col-md-12 d-flex justify-content-end">
+                    <a href="{% url 'sales:member_list' %}" class="btn btn-outline-secondary me-3">
+                        <i class="bi bi-arrow-left"></i> 返回
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check"></i> 保存
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// 表单验证脚本
+(function () {
+    'use strict';
+    
+    // 获取所有需要验证的表单
+    var forms = document.querySelectorAll('.needs-validation');
+    
+    // 循环遍历表单并阻止提交
+    Array.prototype.slice.call(forms)
+        .forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                
+                form.classList.add('was-validated');
+            }, false);
+        });
+})();
+
+// 状态切换标签文字
+const isActiveSwitch = document.getElementById('id_is_active');
+const statusLabel = isActiveSwitch.nextElementSibling;
+
+if (isActiveSwitch && statusLabel) {
+    isActiveSwitch.addEventListener('change', function() {
+        statusLabel.textContent = this.checked ? '正常' : '禁用';
+    });
+}
+</script>
+{% endblock %}

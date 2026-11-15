@@ -1,0 +1,414 @@
+{% extends 'base.html' %}
+
+{% block title %}收银台 - 连锁书店管理系统{% endblock %}
+{% block page_title %}收银台{% endblock %}
+
+{% block extra_css %}
+<style>
+    .cart-item {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+    }
+    .cart-item:last-child {
+        border-bottom: none;
+    }
+    .product-grid {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    .product-btn {
+        width: 100%;
+        height: 60px;
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .total-section {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- 商品选择 -->
+    <div class="col-md-7">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-search"></i> 商品搜索
+            </div>
+            <div class="card-body">
+                <div class="row g-2 mb-3">
+                    <div class="col-md-8">
+                        <input type="text" id="product-search" class="form-control" 
+                               placeholder="扫描条码或输入商品名称搜索...">
+                    </div>
+                    <div class="col-md-4">
+                        <button type="button" class="btn btn-primary w-100" id="search-btn">
+                            <i class="bi bi-search"></i> 搜索
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 商品列表 -->
+                <div class="product-grid" id="product-list">
+                    <div class="row g-2">
+                        {% for product in products %}
+                        <div class="col-md-3 col-sm-4">
+                            <button type="button" class="btn btn-outline-secondary product-btn"
+                                    data-id="{{ product.pk }}"
+                                    data-name="{{ product.name }}"
+                                    data-barcode="{{ product.barcode }}"
+                                    data-price="{{ product.sale_price }}">
+                                {{ product.name }}<br>
+                                <small>¥{{ product.sale_price }}</small>
+                            </button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 购物车 -->
+    <div class="col-md-5">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-cart3"></i> 购物车</span>
+                <button type="button" class="btn btn-sm btn-outline-danger" id="clear-cart">
+                    <i class="bi bi-trash"></i> 清空
+                </button>
+            </div>
+            <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                <div id="cart-items">
+                    <p class="text-center text-muted py-4" id="empty-cart-msg">购物车为空</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 会员 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-person"></i> 会员
+            </div>
+            <div class="card-body">
+                <div class="input-group">
+                    <input type="text" id="member-search" class="form-control" 
+                           placeholder="会员卡号/姓名/手机号">
+                    <button type="button" class="btn btn-outline-primary" id="member-search-btn">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+                <div id="member-info" class="mt-2" style="display: none;">
+                    <div class="alert alert-success mb-0">
+                        <strong id="member-name"></strong>
+                        <span class="ms-2">积分: <span id="member-points"></span></span>
+                        <button type="button" class="btn-close float-end" id="clear-member"></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 结算 -->
+        <div class="card">
+            <div class="card-body">
+                <div class="total-section mb-3">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>商品总额：</span>
+                        <span id="total-amount">¥0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2" id="discount-row" style="display: none;">
+                        <span class="text-success" id="discount-name">优惠：</span>
+                        <span class="text-success">-¥<span id="discount-amount">0.00</span></span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <span class="fw-bold">应付金额：</span>
+                        <span class="fw-bold fs-4 text-primary" id="final-amount">¥0.00</span>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">支付方式</label>
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="payment" value="cash" id="pay-cash" checked>
+                        <label class="btn btn-outline-primary" for="pay-cash">现金</label>
+                        
+                        <input type="radio" class="btn-check" name="payment" value="wechat" id="pay-wechat">
+                        <label class="btn btn-outline-success" for="pay-wechat">微信</label>
+                        
+                        <input type="radio" class="btn-check" name="payment" value="alipay" id="pay-alipay">
+                        <label class="btn btn-outline-info" for="pay-alipay">支付宝</label>
+                    </div>
+                </div>
+                
+                <button type="button" class="btn btn-primary btn-lg w-100" id="checkout-btn">
+                    <i class="bi bi-check-lg"></i> 结算
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 结算成功弹窗 -->
+<div class="modal fade" id="successModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="bi bi-check-circle"></i> 结算成功</h5>
+            </div>
+            <div class="modal-body text-center py-4">
+                <h4>订单号：<span id="result-order-no"></span></h4>
+                <p class="fs-2 text-primary mb-2">¥<span id="result-amount"></span></p>
+                <p id="result-points" class="text-success"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" id="new-order-btn">
+                    开始新订单
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const storeId = {{ store.pk }};
+let cart = [];
+let selectedMember = null;
+let discountInfo = null;
+
+// 检查折扣
+fetch('/sales/api/check-discount/')
+    .then(r => r.json())
+    .then(data => {
+        discountInfo = data;
+        if (data.has_discount) {
+            document.getElementById('discount-name').textContent = data.discount_name + '：';
+        }
+    });
+
+// 添加商品到购物车
+function addToCart(product) {
+    const existing = cart.find(item => item.product_id === product.id);
+    if (existing) {
+        existing.quantity++;
+    } else {
+        cart.push({
+            product_id: product.id,
+            name: product.name,
+            price: parseFloat(product.price),
+            quantity: 1
+        });
+    }
+    renderCart();
+}
+
+// 渲染购物车
+function renderCart() {
+    const container = document.getElementById('cart-items');
+    const emptyMsg = document.getElementById('empty-cart-msg');
+    
+    if (cart.length === 0) {
+        container.innerHTML = '<p class="text-center text-muted py-4">购物车为空</p>';
+        document.getElementById('total-amount').textContent = '¥0.00';
+        document.getElementById('final-amount').textContent = '¥0.00';
+        document.getElementById('discount-row').style.display = 'none';
+        return;
+    }
+    
+    let html = '';
+    let total = 0;
+    
+    cart.forEach((item, index) => {
+        const subtotal = item.price * item.quantity;
+        total += subtotal;
+        html += `
+            <div class="cart-item d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>${item.name}</strong><br>
+                    <small>¥${item.price.toFixed(2)} × ${item.quantity}</small>
+                </div>
+                <div class="d-flex align-items-center">
+                    <span class="me-3">¥${subtotal.toFixed(2)}</span>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-secondary" onclick="changeQty(${index}, -1)">-</button>
+                        <button class="btn btn-outline-secondary" onclick="changeQty(${index}, 1)">+</button>
+                        <button class="btn btn-outline-danger" onclick="removeItem(${index})">×</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+    
+    // 计算折扣
+    let finalAmount = total;
+    let discountAmount = 0;
+    
+    if (discountInfo && discountInfo.has_discount) {
+        finalAmount = total * discountInfo.discount_rate;
+        discountAmount = total - finalAmount;
+        document.getElementById('discount-row').style.display = 'flex';
+        document.getElementById('discount-amount').textContent = discountAmount.toFixed(2);
+    } else {
+        document.getElementById('discount-row').style.display = 'none';
+    }
+    
+    document.getElementById('total-amount').textContent = '¥' + total.toFixed(2);
+    document.getElementById('final-amount').textContent = '¥' + finalAmount.toFixed(2);
+}
+
+// 修改数量
+function changeQty(index, delta) {
+    cart[index].quantity += delta;
+    if (cart[index].quantity <= 0) {
+        cart.splice(index, 1);
+    }
+    renderCart();
+}
+
+// 删除商品
+function removeItem(index) {
+    cart.splice(index, 1);
+    renderCart();
+}
+
+// 清空购物车
+document.getElementById('clear-cart').addEventListener('click', function() {
+    cart = [];
+    renderCart();
+});
+
+// 商品点击
+document.querySelectorAll('.product-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        addToCart({
+            id: this.dataset.id,
+            name: this.dataset.name,
+            price: this.dataset.price
+        });
+    });
+});
+
+// 商品搜索
+document.getElementById('search-btn').addEventListener('click', function() {
+    const keyword = document.getElementById('product-search').value;
+    if (!keyword) return;
+    
+    fetch('/inventory/api/products/search/?q=' + encodeURIComponent(keyword))
+        .then(r => r.json())
+        .then(data => {
+            if (data.products.length === 1) {
+                // 直接添加到购物车
+                addToCart(data.products[0]);
+                document.getElementById('product-search').value = '';
+            } else if (data.products.length > 1) {
+                // 显示搜索结果
+                alert('找到 ' + data.products.length + ' 个商品，请从下方选择');
+            } else {
+                alert('未找到商品');
+            }
+        });
+});
+
+// 条码扫描（回车触发）
+document.getElementById('product-search').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        document.getElementById('search-btn').click();
+    }
+});
+
+// 会员搜索
+document.getElementById('member-search-btn').addEventListener('click', function() {
+    const keyword = document.getElementById('member-search').value;
+    if (!keyword) return;
+    
+    fetch('/sales/api/members/search/?q=' + encodeURIComponent(keyword))
+        .then(r => r.json())
+        .then(data => {
+            if (data.members.length === 1) {
+                selectMember(data.members[0]);
+            } else if (data.members.length > 1) {
+                alert('找到多个会员，请输入更精确的信息');
+            } else {
+                alert('未找到会员');
+            }
+        });
+});
+
+function selectMember(member) {
+    selectedMember = member;
+    document.getElementById('member-info').style.display = 'block';
+    document.getElementById('member-name').textContent = member.name;
+    document.getElementById('member-points').textContent = member.points;
+}
+
+document.getElementById('clear-member').addEventListener('click', function() {
+    selectedMember = null;
+    document.getElementById('member-info').style.display = 'none';
+    document.getElementById('member-search').value = '';
+});
+
+// 结算
+document.getElementById('checkout-btn').addEventListener('click', function() {
+    if (cart.length === 0) {
+        alert('购物车为空');
+        return;
+    }
+    
+    const paymentMethod = document.querySelector('input[name="payment"]:checked').value;
+    
+    fetch('/sales/pos/checkout/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            store_id: storeId,
+            member_id: selectedMember ? selectedMember.id : null,
+            items: cart,
+            payment_method: paymentMethod
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            // 显示成功弹窗
+            document.getElementById('result-order-no').textContent = data.order_no;
+            document.getElementById('result-amount').textContent = data.final_amount;
+            
+            if (data.points_earned > 0) {
+                document.getElementById('result-points').textContent = 
+                    '本次获得 ' + data.points_earned + ' 积分';
+            } else {
+                document.getElementById('result-points').textContent = '';
+            }
+            
+            new bootstrap.Modal(document.getElementById('successModal')).show();
+        } else {
+            alert('结算失败: ' + data.error);
+        }
+    })
+    .catch(err => {
+        alert('结算失败: ' + err);
+    });
+});
+
+// 新订单
+document.getElementById('new-order-btn').addEventListener('click', function() {
+    cart = [];
+    selectedMember = null;
+    document.getElementById('member-info').style.display = 'none';
+    document.getElementById('member-search').value = '';
+    renderCart();
+});
+</script>
+{% endblock %}

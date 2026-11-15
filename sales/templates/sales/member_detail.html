@@ -1,0 +1,299 @@
+{% extends 'base.html' %}
+
+{% block title %}会员详情 - 连锁书店管理系统{% endblock %}
+{% block page_title %}会员详情{% endblock %}
+
+{% block content %}
+<!-- 会员基本信息 -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="bi bi-person-vcard"></i> 基本信息
+        </h5>
+        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editMemberModal">
+            <i class="bi bi-pencil"></i> 编辑信息
+        </button>
+    </div>
+    <div class="card-body">
+        <div class="row g-4">
+            <!-- 会员卡号 -->
+            <div class="col-md-3">
+                <div class="border p-3 rounded bg-light">
+                    <div class="text-muted small mb-1">会员卡号</div>
+                    <div class="fw-bold">{{ member.member_no }}</div>
+                </div>
+            </div>
+            <!-- 姓名 -->
+            <div class="col-md-3">
+                <div class="border p-3 rounded bg-light">
+                    <div class="text-muted small mb-1">姓名</div>
+                    <div class="fw-bold">{{ member.name }}</div>
+                </div>
+            </div>
+            <!-- 手机号 -->
+            <div class="col-md-3">
+                <div class="border p-3 rounded bg-light">
+                    <div class="text-muted small mb-1">手机号</div>
+                    <div class="fw-bold">{{ member.phone }}</div>
+                </div>
+            </div>
+            <!-- 性别 -->
+            <div class="col-md-3">
+                <div class="border p-3 rounded bg-light">
+                    <div class="text-muted small mb-1">性别</div>
+                    <div class="fw-bold">
+                        {% if member.gender == 'M' %}男{% elif member.gender == 'F' %}女{% else %}未知{% endif %}
+                    </div>
+                </div>
+            </div>
+            <!-- 生日 -->
+            <div class="col-md-3">
+                <div class="border p-3 rounded bg-light">
+                    <div class="text-muted small mb-1">生日</div>
+                    <div class="fw-bold">{{ member.birth_date|date:"Y-m-d"|default:"-" }}</div>
+                </div>
+            </div>
+            <!-- 邮箱 -->
+            <div class="col-md-3">
+                <div class="border p-3 rounded bg-light">
+                    <div class="text-muted small mb-1">邮箱</div>
+                    <div class="fw-bold">{{ member.email|default:"-" }}</div>
+                </div>
+            </div>
+            <!-- 积分 -->
+            <div class="col-md-3">
+                <div class="border p-3 rounded bg-light">
+                    <div class="text-muted small mb-1">积分</div>
+                    <div class="fw-bold text-primary">{{ member.points }}</div>
+                </div>
+            </div>
+            <!-- 总消费 -->
+            <div class="col-md-3">
+                <div class="border p-3 rounded bg-light">
+                    <div class="text-muted small mb-1">总消费</div>
+                    <div class="fw-bold text-success">¥{{ member.total_amount|floatformat:2 }}</div>
+                </div>
+            </div>
+            <!-- 状态 -->
+            <div class="col-md-3">
+                <div class="border p-3 rounded bg-light">
+                    <div class="text-muted small mb-1">状态</div>
+                    <div class="fw-bold">
+                        {% if member.is_active %}
+                        <span class="badge bg-success">正常</span>
+                        {% else %}
+                        <span class="badge bg-danger">禁用</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <!-- 注册时间 -->
+            <div class="col-md-3">
+                <div class="border p-3 rounded bg-light">
+                    <div class="text-muted small mb-1">注册时间</div>
+                    <div class="fw-bold">{{ member.created_at|date:"Y-m-d H:i" }}</div>
+                </div>
+            </div>
+            <!-- 地址 -->
+            <div class="col-md-6">
+                <div class="border p-3 rounded bg-light">
+                    <div class="text-muted small mb-1">地址</div>
+                    <div class="fw-bold">{{ member.address|default:"-" }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <a href="{% url 'sales:member_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> 返回列表
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑会员信息模态框 -->
+<div class="modal fade" id="editMemberModal" tabindex="-1" aria-labelledby="editMemberModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editMemberModalLabel">
+                    <i class="bi bi-pencil"></i> 编辑会员信息
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'sales:member_update' member.pk %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row g-4">
+                        <!-- 姓名 -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="id_name" class="form-label">姓名 <span class="text-danger">*</span></label>
+                                <input type="text" name="name" id="id_name" class="form-control" value="{{ member.name }}" required>
+                            </div>
+                        </div>
+                        <!-- 性别 -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="id_gender" class="form-label">性别</label>
+                                <select name="gender" id="id_gender" class="form-control">
+                                    <option value="" {% if not member.gender %}selected{% endif %}>请选择</option>
+                                    <option value="M" {% if member.gender == 'M' %}selected{% endif %}>男</option>
+                                    <option value="F" {% if member.gender == 'F' %}selected{% endif %}>女</option>
+                                    <option value="O" {% if member.gender == 'O' %}selected{% endif %}>其他</option>
+                                </select>
+                            </div>
+                        </div>
+                        <!-- 生日 -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="id_birth_date" class="form-label">生日</label>
+                                <input type="date" name="birth_date" id="id_birth_date" class="form-control" 
+                                    {% if member.birth_date %}value="{{ member.birth_date|date:'Y-m-d' }}"{% endif %}>
+                            </div>
+                        </div>
+                        <!-- 手机号 -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="id_phone" class="form-label">手机号 <span class="text-danger">*</span></label>
+                                <input type="text" name="phone" id="id_phone" class="form-control" value="{{ member.phone }}" required>
+                            </div>
+                        </div>
+                        <!-- 邮箱 -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="id_email" class="form-label">邮箱</label>
+                                <input type="email" name="email" id="id_email" class="form-control" value="{{ member.email|default:'' }}">
+                            </div>
+                        </div>
+                        <!-- 会员状态 -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">会员状态</label>
+                                <div class="form-check form-switch pt-2">
+                                    <input type="checkbox" name="is_active" id="id_is_active" class="form-check-input" 
+                                        {% if member.is_active %}checked{% endif %}>
+                                    <label class="form-check-label" for="id_is_active">
+                                        {% if member.is_active %}正常{% else %}禁用{% endif %}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 地址 -->
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="id_address" class="form-label">地址</label>
+                                <textarea name="address" id="id_address" class="form-control" rows="3">{{ member.address|default:'' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">保存修改</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 最近消费记录 -->
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="bi bi-receipt"></i> 最近消费记录
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>订单号</th>
+                        <th>门店</th>
+                        <th>商品数量</th>
+                        <th>消费金额</th>
+                        <th>获得积分</th>
+                        <th>支付方式</th>
+                        <th>消费时间</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sale in sales %}
+                    <tr>
+                        <td>{{ sale.order_no }}</td>
+                        <td>{{ sale.store.name }}</td>
+                        <td>{{ sale.items.count }}</td>
+                        <td>¥{{ sale.final_amount|floatformat:2 }}</td>
+                        <td class="text-success">+{{ sale.points_earned }}</td>
+                        <td>{{ sale.get_payment_method_display }}</td>
+                        <td>{{ sale.created_at|date:"Y-m-d H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">暂无消费记录</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 最近积分记录 -->
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-gift"></i> 最近积分记录
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>类型</th>
+                        <th>积分变动</th>
+                        <th>积分余额</th>
+                        <th>记录时间</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in points_records %}
+                    <tr>
+                        <td>
+                            {% if record.record_type == 'earn' %}
+                            <span class="badge bg-success">获得积分</span>
+                            {% elif record.record_type == 'redeem' %}
+                            <span class="badge bg-warning">兑换积分</span>
+                            {% elif record.record_type == 'adjust' %}
+                            <span class="badge bg-info">积分调整</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if record.points > 0 %}+{% endif %}{{ record.points }}
+                        </td>
+                        <td>{{ record.balance }}</td>
+                        <td>{{ record.created_at|date:"Y-m-d H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center text-muted py-4">暂无积分记录</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+.info-item {
+    padding: 10px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+.info-item:last-child {
+    border-bottom: none;
+}
+.info-item span {
+    display: inline-block;
+    width: 80px;
+}
+</style>
+{% endblock %}
