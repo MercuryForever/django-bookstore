@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}连锁书店管理系统{% endblock %}</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --sidebar-width: 250px;
+        }
+        body {
+            min-height: 100vh;
+        }
+        .sidebar {
+            width: var(--sidebar-width);
+            min-height: 100vh;
+            background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%);
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin: 4px 12px;
+        }
+        .sidebar .nav-link:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+        .sidebar .nav-link.active {
+            background: #3498db;
+            color: #fff;
+        }
+        .sidebar .nav-link i {
+            margin-right: 10px;
+            width: 20px;
+        }
+        .main-content {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            background: #f8f9fa;
+        }
+        .top-navbar {
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .card {
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-radius: 12px;
+        }
+        .card-header {
+            background: #fff;
+            border-bottom: 1px solid #eee;
+            font-weight: 600;
+        }
+        .btn-primary {
+            background: #3498db;
+            border-color: #3498db;
+        }
+        .btn-primary:hover {
+            background: #2980b9;
+            border-color: #2980b9;
+        }
+        .table th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+        .badge-role-admin { background: #e74c3c; }
+        .badge-role-manager { background: #3498db; }
+        .badge-role-cashier { background: #2ecc71; }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% if user.is_authenticated %}
+    <!-- 侧边栏 -->
+    <div class="sidebar position-fixed">
+        <div class="p-4">
+            <h4 class="text-white mb-0">
+                <i class="bi bi-book"></i> 书店管理
+            </h4>
+            <small class="text-white-50">连锁进销存系统</small>
+        </div>
+        <hr class="text-white-50 mx-3">
+        <nav class="nav flex-column">
+            <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="{% url 'dashboard' %}">
+                <i class="bi bi-speedometer2"></i> 仪表盘
+            </a>
+          
+            {% if user.employee.role == 'admin' or user.employee.role == 'manager' %}
+            <a class="nav-link {% if 'inventory' in request.path %}active{% endif %}" href="{% url 'inventory:list' %}">
+                <i class="bi bi-box-seam"></i> 库存管理
+            </a>
+            <a class="nav-link {% if 'purchase' in request.path %}active{% endif %}" href="{% url 'purchase:order_list' %}">
+                <i class="bi bi-cart-plus"></i> 采购管理
+            </a>
+            {% endif %}
+          
+            <a class="nav-link {% if 'sales/' in request.path and 'pos' not in request.path and 'members' not in request.path %}active{% endif %}" href="{% url 'sales:sale_list' %}">
+                <i class="bi bi-receipt"></i> 销售记录
+            </a>
+            <a class="nav-link {% if 'pos' in request.path %}active{% endif %}" href="{% url 'sales:pos' %}">
+                <i class="bi bi-cash-register"></i> 收银台
+            </a>
+          
+            {% if user.employee.role == 'admin' or user.employee.role == 'manager' %}
+            <a class="nav-link {% if 'members' in request.path %}active{% endif %}" href="{% url 'sales:member_list' %}">
+                <i class="bi bi-people"></i> 会员管理
+            </a>
+            <a class="nav-link {% if 'finance' in request.path %}active{% endif %}" href="{% url 'finance:dashboard' %}">
+                <i class="bi bi-graph-up"></i> 财务报表
+            </a>
+            {% endif %}
+          
+            {% if user.employee.role == 'admin' %}
+            <a class="nav-link {% if 'users' in request.path and 'login' not in request.path %}active{% endif %}" href="{% url 'users:employee_list' %}">
+                <i class="bi bi-person-gear"></i> 员工管理
+            </a>
+            {% endif %}
+        </nav>
+    </div>
+
+    <!-- 主内容区 -->
+    <div class="main-content">
+        <!-- 顶部导航 -->
+        <nav class="top-navbar navbar navbar-expand-lg px-4 py-3">
+            <div class="container-fluid">
+                <span class="navbar-text">
+                    {% block page_title %}首页{% endblock %}
+                </span>
+                <div class="d-flex align-items-center">
+                    <span class="me-3">
+                        <i class="bi bi-person-circle"></i>
+                        {{ user.get_full_name|default:user.username }}
+                        {% if user.employee %}
+                        <span class="badge badge-role-{{ user.employee.role }}">
+                            {{ user.employee.get_role_display }}
+                        </span>
+                        {% if user.employee.store %}
+                        <small class="text-muted">- {{ user.employee.store.name }}</small>
+                        {% endif %}
+                        {% endif %}
+                    </span>
+                    <a href="{% url 'users:logout' %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-box-arrow-right"></i> 退出
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 页面内容 -->
+        <div class="container-fluid p-4">
+            {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+            {% endif %}
+          
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+    {% else %}
+    <!-- 未登录状态 -->
+    <div class="container">
+        {% block auth_content %}{% endblock %}
+    </div>
+    {% endif %}
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
