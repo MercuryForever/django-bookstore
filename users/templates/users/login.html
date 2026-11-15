@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}登录 - 连锁书店管理系统{% endblock %}
+
+{% block auth_content %}
+<div class="min-vh-100 d-flex align-items-center justify-content-center" 
+     style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <div class="card shadow-lg" style="width: 400px; border-radius: 16px;">
+        <div class="card-body p-5">
+            <div class="text-center mb-4">
+                <i class="bi bi-book text-primary" style="font-size: 3rem;"></i>
+                <h3 class="mt-2">连锁书店管理系统</h3>
+                <p class="text-muted">请登录您的账号</p>
+            </div>
+            
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label class="form-label">用户名</label>
+                    {{ form.username }}
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label">密码</label>
+                    {{ form.password }}
+                </div>
+                
+                <button type="submit" class="btn btn-primary w-100 py-2">
+                    <i class="bi bi-box-arrow-in-right"></i> 登 录
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

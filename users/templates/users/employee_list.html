@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}员工管理 - 连锁书店管理系统{% endblock %}
+{% block page_title %}员工管理{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-people"></i> 员工列表</span>
+        <a href="{% url 'users:employee_create' %}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg"></i> 新增员工
+        </a>
+    </div>
+    <div class="card-body">
+        <!-- 搜索和筛选 -->
+        <form method="get" class="row g-3 mb-4">
+            <div class="col-md-4">
+                <input type="text" name="search" class="form-control" 
+                       placeholder="搜索用户名、姓名、电话..." value="{{ search }}">
+            </div>
+            <div class="col-md-3">
+                <select name="role" class="form-select">
+                    <option value="">全部角色</option>
+                    <option value="admin" {% if role == 'admin' %}selected{% endif %}>系统管理员</option>
+                    <option value="manager" {% if role == 'manager' %}selected{% endif %}>店长</option>
+                    <option value="cashier" {% if role == 'cashier' %}selected{% endif %}>收银员</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="bi bi-search"></i> 搜索
+                </button>
+            </div>
+        </form>
+        
+        <!-- 员工表格 -->
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>用户名</th>
+                    <th>姓名</th>
+                    <th>角色</th>
+                    <th>所属门店</th>
+                    <th>电话</th>
+                    <th>创建时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for employee in employees %}
+                <tr>
+                    <td>{{ employee.user.username }}</td>
+                    <td>{{ employee.user.first_name|default:"-" }}</td>
+                    <td>
+                        <span class="badge badge-role-{{ employee.role }}">
+                            {{ employee.get_role_display }}
+                        </span>
+                    </td>
+                    <td>{{ employee.store.name|default:"-" }}</td>
+                    <td>{{ employee.phone|default:"-" }}</td>
+                    <td>{{ employee.created_at|date:"Y-m-d H:i" }}</td>
+                    <td>
+                        <a href="{% url 'users:employee_edit' employee.pk %}" 
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <a href="{% url 'users:employee_delete' employee.pk %}" 
+                           class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">暂无员工数据</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <!-- 分页 -->
+        {% if employees.has_other_pages %}
+        <nav>
+            <ul class="pagination justify-content-center">
+                {% if employees.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ employees.previous_page_number }}&search={{ search }}&role={{ role }}">上一页</a>
+                </li>
+                {% endif %}
+                
+                {% for num in employees.paginator.page_range %}
+                <li class="page-item {% if num == employees.number %}active{% endif %}">
+                    <a class="page-link" href="?page={{ num }}&search={{ search }}&role={{ role }}">{{ num }}</a>
+                </li>
+                {% endfor %}
+                
+                {% if employees.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ employees.next_page_number }}&search={{ search }}&role={{ role }}">下一页</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

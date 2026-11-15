@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block title %}删除员工 - 连锁书店管理系统{% endblock %}
+{% block page_title %}删除员工{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <i class="bi bi-exclamation-triangle"></i> 确认删除
+            </div>
+            <div class="card-body text-center py-4">
+                <h5>确定要删除员工吗？</h5>
+                <p class="text-muted">
+                    {{ employee.user.first_name|default:employee.user.username }} 
+                    ({{ employee.get_role_display }})
+                </p>
+                <p class="text-danger small">此操作不可撤销，员工账号将被永久删除！</p>
+                
+                <form method="post" class="mt-4">
+                    {% csrf_token %}
+                    <a href="{% url 'users:employee_list' %}" class="btn btn-outline-secondary">
+                        取消
+                    </a>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> 确认删除
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

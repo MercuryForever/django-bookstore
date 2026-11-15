@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - 连锁书店管理系统{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-person-plus"></i> {{ title }}
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">用户名 <span class="text-danger">*</span></label>
+                            {{ form.username }}
+                            {% if form.username.errors %}
+                            <div class="text-danger small">{{ form.username.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                密码 
+                                {% if employee %}<small class="text-muted">(留空不修改)</small>{% else %}<span class="text-danger">*</span>{% endif %}
+                            </label>
+                            {{ form.password }}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">姓名 <span class="text-danger">*</span></label>
+                            {{ form.first_name }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">电话</label>
+                            {{ form.phone }}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">角色 <span class="text-danger">*</span></label>
+                            {{ form.role }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">所属门店</label>
+                            {{ form.store }}
+                            <small class="text-muted">系统管理员可不选门店</small>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'users:employee_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> 返回
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg"></i> 保存
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
